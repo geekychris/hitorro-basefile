@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.png" alt="Hitorro Basefile logo" width="180">
+</p>
+
 # hitorro-basefile
 
 Pluggable filesystem abstraction for the HiTorro family, plus everything that
