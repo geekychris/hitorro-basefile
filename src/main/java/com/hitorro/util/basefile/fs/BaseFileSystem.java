@@ -21,7 +21,7 @@
  */
 package com.hitorro.util.basefile.fs;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.hitorro.util.basefile.fs.configfactories.BaseFilePropertyFactory;
 import com.hitorro.util.basefile.fs.configfactories.FilePropertyFactory;
 import com.hitorro.util.basefile.fs.dfs.DFSFileSystem;

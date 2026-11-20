@@ -21,7 +21,7 @@
  */
 package com.hitorro.util.basefile.tools;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import gnu.trove.iterator.TLongObjectIterator;
 import gnu.trove.iterator.TObjectIntIterator;
 import gnu.trove.map.hash.TLongObjectHashMap;

@@ -1,0 +1,103 @@
+jsonSink.0.beforeClose={"id":1,"name":"a","tags":["x","y"],"meta":{},"u":"é /\\t","z":-0.0}\n{"id":2,"v":1.1,"n":null,"big":12345678901234567890,"dec":1.2345678901234568E29,"e":[],"b":true,"l":12345678901}
+jsonSink.0=true,true,false|{"id":1,"name":"a","tags":["x","y"],"meta":{},"u":"é /\\t","z":-0.0}\n{"id":2,"v":1.1,"n":null,"big":12345678901234567890,"dec":1.2345678901234568E29,"e":[],"b":true,"l":12345678901}
+jsonSink.1.beforeClose={\n  "id" : 1,\n  "name" : "a",\n  "tags" : [ "x", "y" ],\n  "meta" : { },\n  "u" : "é /\\t",\n  "z" : -0.0\n}\n{\n  "id" : 2,\n  "v" : 1.1,\n  "n" : null,\n  "big" : 12345678901234567890,\n  "dec" : 1.2345678901234568E29,\n  "e" : [ ],\n  "b" : true,\n  "l" : 12345678901\n}
+jsonSink.1=true,true,false|{\n  "id" : 1,\n  "name" : "a",\n  "tags" : [ "x", "y" ],\n  "meta" : { },\n  "u" : "é /\\t",\n  "z" : -0.0\n}\n{\n  "id" : 2,\n  "v" : 1.1,\n  "n" : null,\n  "big" : 12345678901234567890,\n  "dec" : 1.2345678901234568E29,\n  "e" : [ ],\n  "b" : true,\n  "l" : 12345678901\n}
+jsonSink.2.beforeClose={"id":1,"name":"a","tags":["x","y"],"meta":{},"u":"é /\\t","z":-0.0}\n{"id":2,"v":1.1,"n":null,"big":12345678901234567890,"dec":1.2345678901234568E29,"e":[],"b":true,"l":12345678901}
+jsonSink.2=true,true,false|{"id":1,"name":"a","tags":["x","y"],"meta":{},"u":"é /\\t","z":-0.0}\n{"id":2,"v":1.1,"n":null,"big":12345678901234567890,"dec":1.2345678901234568E29,"e":[],"b":true,"l":12345678901}
+jsonSink.3.beforeClose=PRE<{\n  "id" : 1,\n  "name" : "a",\n  "tags" : [ "x", "y" ],\n  "meta" : { },\n  "u" : "é /\\t",\n  "z" : -0.0\n}\n{\n  "id" : 2,\n  "v" : 1.1,\n  "n" : null,\n  "big" : 12345678901234567890,\n  "dec" : 1.2345678901234568E29,\n  "e" : [ ],\n  "b" : true,\n  "l" : 12345678901\n}>POST
+jsonSink.3=true,true,false|PRE<{\n  "id" : 1,\n  "name" : "a",\n  "tags" : [ "x", "y" ],\n  "meta" : { },\n  "u" : "é /\\t",\n  "z" : -0.0\n}\n{\n  "id" : 2,\n  "v" : 1.1,\n  "n" : null,\n  "big" : 12345678901234567890,\n  "dec" : 1.2345678901234568E29,\n  "e" : [ ],\n  "b" : true,\n  "l" : 12345678901\n}>POST
+jsonSink.4.beforeClose={"id":1,"name":"a","tags":["x","y"],"meta":{},"u":"é /\\t","z":-0.0}\n{"id":2,"v":1.1,"n":null,"big":12345678901234567890,"dec":1.2345678901234568E29,"e":[],"b":true,"l":12345678901}
+jsonSink.4=true,true,false|{"id":1,"name":"a","tags":["x","y"],"meta":{},"u":"é /\\t","z":-0.0}\n{"id":2,"v":1.1,"n":null,"big":12345678901234567890,"dec":1.2345678901234568E29,"e":[],"b":true,"l":12345678901}
+jsonSink.5.beforeClose=[{"id":1,"name":"a","tags":["x","y"],"meta":{},"u":"é /\\t","z":-0.0},{"id":2,"v":1.1,"n":null,"big":12345678901234567890,"dec":1.2345678901234568E29,"e":[],"b":true,"l":12345678901}]
+jsonSink.5=true,true,false|[{"id":1,"name":"a","tags":["x","y"],"meta":{},"u":"é /\\t","z":-0.0},{"id":2,"v":1.1,"n":null,"big":12345678901234567890,"dec":1.2345678901234568E29,"e":[],"b":true,"l":12345678901}]
+jsonSink.smile=!UnsupportedOperationException
+jsonSink.smile.after=
+jsonSink.ioError=true,true
+baseFile.writeJson.json={"id":2,"v":1.1,"n":null,"big":12345678901234567890,"dec":1.2345678901234568E29,"e":[],"b":true,"l":12345678901}
+baseFile.readJsonElement.json={"id":2,"v":1.1,"n":null,"big":12345678901234567890,"dec":1.2345678901234568E29,"e":[],"b":true,"l":12345678901} id:IntNode,v:DoubleNode,n:NullNode,big:BigIntegerNode,dec:DoubleNode,e:ArrayNode,b:BooleanNode,l:LongNode,
+baseFile.getJsonNode.json={"id":2,"v":1.1,"n":null,"big":12345678901234567890,"dec":1.2345678901234568E29,"e":[],"b":true,"l":12345678901}
+baseFile.writeJson.json.gz={"id":2,"v":1.1,"n":null,"big":12345678901234567890,"dec":1.2345678901234568E29,"e":[],"b":true,"l":12345678901}
+baseFile.readJsonElement.json.gz={"id":2,"v":1.1,"n":null,"big":12345678901234567890,"dec":1.2345678901234568E29,"e":[],"b":true,"l":12345678901} id:IntNode,v:DoubleNode,n:NullNode,big:BigIntegerNode,dec:DoubleNode,e:ArrayNode,b:BooleanNode,l:LongNode,
+baseFile.getJsonNode.json.gz={"id":2,"v":1.1,"n":null,"big":12345678901234567890,"dec":1.2345678901234568E29,"e":[],"b":true,"l":12345678901}
+read.empty.readJsonElement=MissingNode  
+read.empty.getJsonNode=MissingNode 
+read.empty.iterator=
+read.empty.iteratorReader=
+read.empty.iteratorStream=
+read.ws.readJsonElement=MissingNode  
+read.ws.getJsonNode=MissingNode 
+read.ws.iterator=
+read.ws.iteratorReader=
+read.ws.iteratorStream=
+read.bad.readJsonElement=!JsonParseException
+read.bad.getJsonNode=!JsonParseException
+read.bad.iterator=!JSONParseException
+read.bad.iteratorReader=!JSONParseException
+read.bad.iteratorStream=!JSONParseException
+read.trailing.readJsonElement=ObjectNode {"a":1} a:IntNode,
+read.trailing.getJsonNode=ObjectNode {"a":1}
+read.trailing.iterator=ObjectNode {"a":1} a:IntNode, | ObjectNode {"b":2} b:IntNode, | 
+read.trailing.iteratorReader={"a":1} | {"b":2} | 
+read.trailing.iteratorStream={"a":1} | {"b":2} | 
+read.trailingGarbage.readJsonElement=ObjectNode {"a":1} a:IntNode,
+read.trailingGarbage.getJsonNode=ObjectNode {"a":1}
+read.trailingGarbage.iterator=!JSONParseException
+read.trailingGarbage.iteratorReader=!JSONParseException
+read.trailingGarbage.iteratorStream=!JSONParseException
+read.scalar.readJsonElement=IntNode 42 
+read.scalar.getJsonNode=IntNode 42
+read.scalar.iterator=IntNode 42  | 
+read.scalar.iteratorReader=42 | 
+read.scalar.iteratorStream=42 | 
+read.string.readJsonElement=TextNode "s" 
+read.string.getJsonNode=TextNode "s"
+read.string.iterator=TextNode "s"  | 
+read.string.iteratorReader="s" | 
+read.string.iteratorStream="s" | 
+read.array.readJsonElement=ArrayNode [1,2.5,"x",null,true] 
+read.array.getJsonNode=ArrayNode [1,2.5,"x",null,true]
+read.array.iterator=ArrayNode [1,2.5,"x",null,true]  | 
+read.array.iteratorReader=[1,2.5,"x",null,true] | 
+read.array.iteratorStream=[1,2.5,"x",null,true] | 
+read.nullLit.readJsonElement=NullNode null 
+read.nullLit.getJsonNode=NullNode null
+read.nullLit.iterator=NullNode null  | 
+read.nullLit.iteratorReader=null | 
+read.nullLit.iteratorStream=null | 
+read.dupKeys.readJsonElement=ObjectNode {"a":2} a:IntNode,
+read.dupKeys.getJsonNode=ObjectNode {"a":2}
+read.dupKeys.iterator=ObjectNode {"a":2} a:IntNode, | 
+read.dupKeys.iteratorReader={"a":2} | 
+read.dupKeys.iteratorStream={"a":2} | 
+read.comment.readJsonElement=!JsonParseException
+read.comment.getJsonNode=!JsonParseException
+read.comment.iterator=!JSONParseException
+read.comment.iteratorReader=!JSONParseException
+read.comment.iteratorStream=!JSONParseException
+read.single.readJsonElement=!JsonParseException
+read.single.getJsonNode=!JsonParseException
+read.single.iterator=!JSONParseException
+read.single.iteratorReader=!JSONParseException
+read.single.iteratorStream=!JSONParseException
+read.nan.readJsonElement=!JsonParseException
+read.nan.getJsonNode=!JsonParseException
+read.nan.iterator=!JSONParseException
+read.nan.iteratorReader=!JSONParseException
+read.nan.iteratorStream=!JSONParseException
+read.ctrl.readJsonElement=!JsonParseException
+read.ctrl.getJsonNode=!JsonParseException
+read.ctrl.iterator=!JSONParseException
+read.ctrl.iteratorReader=!JSONParseException
+read.ctrl.iteratorStream=!JSONParseException
+read.bigExp.readJsonElement=ObjectNode {"a":"Infinity","b":1500.0} a:DoubleNode,b:DoubleNode,
+read.bigExp.getJsonNode=ObjectNode {"a":"Infinity","b":1500.0}
+read.bigExp.iterator=ObjectNode {"a":"Infinity","b":1500.0} a:DoubleNode,b:DoubleNode, | 
+read.bigExp.iteratorReader={"a":"Infinity","b":1500.0} | 
+read.bigExp.iteratorStream={"a":"Infinity","b":1500.0} | 
+iterator.multi={"id":1,"name":"a","tags":["x","y"],"meta":{},"u":"é /\\t","z":-0.0} id:IntNode,name:TextNode,tags:ArrayNode,meta:ObjectNode,u:TextNode,z:DoubleNode, | {"id":2,"v":1.1,"n":null,"big":-350287150,"dec":1.2345678901234568E29,"e":[],"b":true,"l":12345678901} id:IntNode,v:DoubleNode,n:NullNode,big:IntNode,dec:DoubleNode,e:ArrayNode,b:BooleanNode,l:LongNode, | [1,{"k":"v"}]  | 7  | "s"  | {"x":{"y":[{}]}} x:ObjectNode, | 
+name2json.thing={"id":1,"name":"a","tags":["x","y"],"meta":{},"u":"é /\\t","z":-0.0}
+name2json.DOM_Thing={"id":1,"name":"a","tags":["x","y"],"meta":{},"u":"é /\\t","z":-0.0}
+name2json.broken=null
+name2json.missing=null
+name2json.=null
+roundTrip={"id":1,"name":"a","tags":["x","y"],"meta":{},"u":"é /\\t","z":-0.0} id:IntNode,name:TextNode,tags:ArrayNode,meta:ObjectNode,u:TextNode,z:DoubleNode, | {"id":2,"v":1.1,"n":null,"big":-350287150,"dec":1.2345678901234568E29,"e":[],"b":true,"l":12345678901} id:IntNode,v:DoubleNode,n:NullNode,big:IntNode,dec:DoubleNode,e:ArrayNode,b:BooleanNode,l:LongNode, | 

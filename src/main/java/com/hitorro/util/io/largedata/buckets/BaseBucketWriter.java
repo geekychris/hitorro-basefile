@@ -21,7 +21,7 @@
  */
 package com.hitorro.util.io.largedata.buckets;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.hitorro.util.io.largedata.BaseFileAccessingObjectFactory;
 import com.hitorro.util.io.largedata.buckets.containers.ArrayBucketWriterContainer;
 import com.hitorro.util.io.largedata.buckets.containers.BucketWriterContainer;

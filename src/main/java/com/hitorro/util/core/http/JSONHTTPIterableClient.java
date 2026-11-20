@@ -21,7 +21,7 @@
  */
 package com.hitorro.util.core.http;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.hitorro.util.basefile.tools.BaseFileUtil;
 import com.hitorro.util.io.FileUtil;
 import com.hitorro.util.core.iterator.helpers.FileMappers;

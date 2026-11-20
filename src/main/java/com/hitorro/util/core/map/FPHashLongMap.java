@@ -22,9 +22,9 @@
 package com.hitorro.util.core.map;
 
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 import com.hitorro.util.basefile.filters.FileEndsWith;
 import com.hitorro.util.basefile.fs.BaseFile;
 import com.hitorro.util.basefile.tools.BaseFileUtil;
@@ -44,6 +44,7 @@ import com.hitorro.util.json.keys.propaccess.PropaccessError;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Iterator;
+import com.hitorro.util.json.JsonValues;
 
 /**
  * Wrapper around a TLongLongHashMap that provides a way to assume that the key is hash and the long value is a series
@@ -260,7 +261,7 @@ public class FPHashLongMap extends FPHashBaseMap implements CSVConsumer {
 
     protected void add(ObjectNode m) throws PropaccessError {
         JsonNode keyNode = csvMap.get(KeyName);
-        String v = keyNode != null ? keyNode.asText() : null;
+        String v = keyNode != null ? JsonValues.asText(keyNode) : null;
         if (StringUtil.nullOrEmptyString(v)) {
             // problem, expected a key!!!!
         } else {

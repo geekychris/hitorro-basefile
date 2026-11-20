@@ -21,8 +21,8 @@
  */
 package com.hitorro.util.io.csv.query;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import com.hitorro.util.basefile.fs.BaseFile;
 import com.hitorro.util.core.iterator.CloseableIterator;
