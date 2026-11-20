@@ -23,8 +23,8 @@ package com.hitorro.util.basefile.fs;
 
 import com.hitorro.util.core.string.StringUtilCore;
 import com.hitorro.util.io.FileUtilCore;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.compress.BZip2Codec;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,12 +50,13 @@ public enum CompressionType {
         @Override
         public InputStream getInputCompressed(final InputStream is) throws IOException {
 
-            return bz2codec.createInputStream(is);
+            // true: read concatenated streams too (pbzip2, appended .bz2 files)
+            return new BZip2CompressorInputStream(is, true);
         }
 
         @Override
         public OutputStream getOutputStreamCompressed(final OutputStream os) throws IOException {
-            return bz2codec.createOutputStream(os);
+            return new BZip2CompressorOutputStream(os);
         }
     },
     zstd("zstd") {
@@ -81,18 +82,11 @@ public enum CompressionType {
         }
     };
 
-    static BZip2Codec bz2codec = getbz2Codec();
     private static HashMap<String, CompressionType> s_byShortName;
     private String extension;
     CompressionType(String extension) {
         this.extension = extension;
         setMapEntry(this);
-    }
-
-    private static BZip2Codec getbz2Codec() {
-        BZip2Codec codec = new BZip2Codec();
-        codec.setConf(new Configuration());
-        return codec;
     }
 
     public static CompressionType getFilterByFileName(String name) {

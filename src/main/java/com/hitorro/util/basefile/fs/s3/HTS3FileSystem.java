@@ -1,199 +1,175 @@
 /*
- * Copyright (c) 2006-2025 Chris Collins
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * Copyright (c) 2006-2026 Chris Collins
  */
 package com.hitorro.util.basefile.fs.s3;
 
-import com.hitorro.util.basefile.fs.dfs.DFSFileSystem;
-import com.hitorro.util.core.EnvCore;
+import com.hitorro.util.basefile.fs.BaseFile;
+import com.hitorro.util.basefile.fs.BaseFileSystem;
 import com.hitorro.util.core.Log;
-import com.hitorro.util.core.string.FmtCore;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3ClientBuilder;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
- * S3 FileSystem implementation using Hadoop S3A with AWS SDK v2.
- * 
- * This implementation uses Hadoop's S3A FileSystem which provides:
- * - Modern AWS SDK v2 (actively supported, end-of-life for v1 is Dec 31, 2025)
- * - Better performance (2-5x faster than old S3N/JetS3t implementation)
- * - IAM role support (no hardcoded credentials needed)
- * - Server-side encryption (SSE-S3, SSE-KMS, SSE-C)
- * - Multipart uploads for large files
- * - Better error handling and automatic retries
- * - Transfer acceleration support
- * 
- * URI Format: s3a://bucket-name/path/to/file
- * 
- * Basic Configuration:
- * <pre>
- * fs.s3a.access.key=AKIAIOSFODNN7EXAMPLE
- * fs.s3a.secret.key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
- * fs.s3a.endpoint.region=us-east-1
- * </pre>
- * 
- * IAM Role Configuration (recommended for EC2/ECS):
- * <pre>
- * fs.s3a.aws.credentials.provider=org.apache.hadoop.fs.s3a.auth.IAMInstanceCredentialsProvider
- * </pre>
- * 
- * @see <a href="https://hadoop.apache.org/docs/r3.4.1/hadoop-aws/tools/hadoop-aws/index.html">Hadoop-AWS Documentation</a>
+ * One S3 bucket as a {@link BaseFileSystem}, on the AWS SDK for Java v2 (no
+ * Hadoop). Paths are object keys; "directories" are key prefixes, as in S3A.
+ *
+ * <p>Credentials are the explicit access/secret keys when given, otherwise the
+ * SDK's default chain (environment, system properties, profile, container or
+ * instance role). The region is the one given, otherwise the SDK's default
+ * provider chain ({@code AWS_REGION}, profile…). For other S3-compatible stores
+ * (MinIO, Ceph, R2, GCS's S3 API…) use {@link S3CompatibleFileSystem}, or
+ * override {@link #configureClient(S3ClientBuilder)}.</p>
+ *
+ * <p>The S3 client is created on first use and shared by every file of this
+ * file system; {@link #close()} releases it.</p>
  */
-public class HTS3FileSystem extends DFSFileSystem {
+public class HTS3FileSystem extends BaseFileSystem<S3File, HTS3FileSystem> implements AutoCloseable {
+
+    /** Default multipart part size: objects above it upload in parts of this size. */
+    public static final int DEFAULT_PART_SIZE = 16 * 1024 * 1024;
 
     protected String bucketName;
     protected String secretAccessKey;
     protected String accessKey;
-    private String region;  // AWS region (optional)
-    
+    private final String region;
+    private int partSize = DEFAULT_PART_SIZE;
+    private volatile S3Client client;
+
     /**
-     * Create S3 filesystem with explicit credentials.
-     * 
-     * @param bucketName S3 bucket name (without s3a:// prefix)
+     * Create S3 filesystem with explicit credentials (null for the default chain).
+     *
+     * @param bucketName      S3 bucket name
      * @param secretAccessKey AWS secret access key
-     * @param accessKey AWS access key ID
+     * @param accessKey       AWS access key ID
      */
     public HTS3FileSystem(String bucketName, String secretAccessKey, String accessKey) {
         this(bucketName, secretAccessKey, accessKey, null);
     }
-    
+
     /**
      * Create S3 filesystem with explicit credentials and region.
-     * 
-     * @param bucketName S3 bucket name (without s3a:// prefix)
-     * @param secretAccessKey AWS secret access key
-     * @param accessKey AWS access key ID
-     * @param region AWS region (e.g., "us-east-1"), null for default
+     *
+     * @param bucketName      S3 bucket name
+     * @param secretAccessKey AWS secret access key, or null for the default chain
+     * @param accessKey       AWS access key ID, or null for the default chain
+     * @param region          AWS region (e.g. "us-east-1"), or null for the default
      */
     public HTS3FileSystem(String bucketName, String secretAccessKey, String accessKey, String region) {
-        // Use s3a:// protocol (modern S3A implementation with AWS SDK v2)
-        super(FmtCore.S("s3a://%s", bucketName), FmtCore.S("s3a://%s", bucketName));
         this.bucketName = bucketName;
         this.secretAccessKey = secretAccessKey;
         this.accessKey = accessKey;
         this.region = region;
+        this.pathPart = "";
     }
 
-    /**
-     * Configure S3 filesystem from configuration object.
-     * 
-     * @param config S3 configuration
-     */
     public HTS3FileSystem(S3Config config) {
         this(config.bucket, config.secretAccessKey, config.accessKey, config.region);
     }
 
-    @Override
-    protected FileSystem getFileSystem() {
-        FileSystem ret = null;
-
-        try {
-            URI uri = new URI(hdfsURI);
-            Configuration conf = new Configuration(false);
-
-            // S3A FileSystem implementation (Hadoop 3.4.x with AWS SDK v2)
-            conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem");
-            
-            // Credentials configuration
-            if (accessKey != null && secretAccessKey != null) {
-                // Explicit credentials provided
-                conf.set("fs.s3a.access.key", accessKey);
-                conf.set("fs.s3a.secret.key", secretAccessKey);
-                conf.set("fs.s3a.aws.credentials.provider", 
-                        "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
-                Log.util.debug("S3A using explicit credentials for bucket: %s", bucketName);
-            } else {
-                // Use default credential provider chain (IAM roles, env vars, etc.)
-                conf.set("fs.s3a.aws.credentials.provider",
-                        "com.amazonaws.auth.DefaultAWSCredentialsProviderChain");
-                Log.util.info("S3A using default credential provider chain (IAM role, env vars, etc.)");
+    /** The shared S3 client, created on first use. */
+    public S3Client getClient() {
+        S3Client c = client;
+        if (c == null) {
+            synchronized (this) {
+                c = client;
+                if (c == null) {
+                    S3ClientBuilder b = S3Client.builder().credentialsProvider(credentials());
+                    if (region != null && !region.isEmpty()) {
+                        b.region(Region.of(region));
+                    }
+                    configureClient(b);
+                    client = c = b.build();
+                    Log.util.debug("S3 client ready for bucket %s", bucketName);
+                }
             }
-            
-            // Region configuration
-            if (region != null && !region.isEmpty()) {
-                conf.set("fs.s3a.endpoint.region", region);
-                Log.util.debug("S3A region: %s", region);
-            }
-            
-            // Performance tuning for production use
-            conf.set("fs.s3a.connection.maximum", "100");  // Max HTTP connections
-            conf.set("fs.s3a.threads.max", "64");          // Thread pool size
-            conf.set("fs.s3a.fast.upload", "true");        // Use fast upload mechanism
-            conf.set("fs.s3a.block.size", "134217728");    // 128MB block size
-            
-            // Multipart upload configuration (for files > 100MB)
-            conf.set("fs.s3a.multipart.size", "104857600");      // 100MB per part
-            conf.set("fs.s3a.multipart.threshold", "209715200"); // Start multipart at 200MB
-            
-            // Buffer configuration (use temp directory for staging)
-            conf.set("fs.s3a.buffer.dir", EnvCore.getTempDirectory().getAbsolutePath());
-            
-            // Retry configuration for network resilience
-            conf.set("fs.s3a.retry.limit", "7");
-            conf.set("fs.s3a.retry.interval", "500ms");
-            conf.set("fs.s3a.connection.timeout", "200000");
-            conf.set("fs.s3a.attempts.maximum", "10");
-            
-            // Optional: Enable server-side encryption (uncomment if needed)
-            // conf.set("fs.s3a.server-side-encryption-algorithm", "AES256");
-            // Or with KMS:
-            // conf.set("fs.s3a.server-side-encryption-algorithm", "SSE-KMS");
-            // conf.set("fs.s3a.server-side-encryption.key", "arn:aws:kms:region:account:key/key-id");
-            
-            ret = FileSystem.get(uri, conf);
-            triedAndFailed = false;
-            
-            Log.util.info("✓ Connected to S3 bucket via S3A: %s (region: %s)", 
-                         bucketName, region != null ? region : "default");
-            return ret;
-            
-        } catch (IOException e) {
-            Log.util.error("Unable to connect to S3 filesystem %s: %s", hdfsURI, e.getMessage(), e);
-            triedAndFailed = true;
-        } catch (URISyntaxException e) {
-            Log.util.error("URI for S3 filesystem incorrectly formed %s: %s", hdfsURI, e.getMessage(), e);
-            triedAndFailed = true;
         }
-
-        return ret;
+        return c;
     }
-    
+
     /**
-     * Get the S3 bucket name.
-     * 
-     * @return bucket name (without s3a:// prefix)
+     * Customize the S3 client before it is built: endpoint, path-style access,
+     * HTTP client, retries. The default does nothing.
      */
+    protected void configureClient(S3ClientBuilder builder) {
+    }
+
+    protected AwsCredentialsProvider credentials() {
+        if (accessKey != null && secretAccessKey != null) {
+            return StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretAccessKey));
+        }
+        return DefaultCredentialsProvider.builder().build();
+    }
+
+    /** Multipart part size for writes (at least 5 MiB). */
+    public HTS3FileSystem withPartSize(int bytes) {
+        if (bytes < S3MultipartOutputStream.MIN_PART_SIZE) {
+            throw new IllegalArgumentException("part size must be at least 5 MiB");
+        }
+        this.partSize = bytes;
+        return this;
+    }
+
+    public int getPartSize() {
+        return partSize;
+    }
+
+    @Override
+    public S3File getFile(BaseFile af) {
+        return new S3File(this, af.getRelativePath());
+    }
+
+    @Override
+    public S3File getFile(String path) {
+        return new S3File(this, path);
+    }
+
+    @Override
+    public S3File getFileEnsuringDir(String path) {
+        return getFile(path);
+    }
+
+    /**
+     * Deletes every object under this file system's root. Refuses when the root
+     * is the whole bucket: emptying a bucket is not a file-system operation.
+     */
+    @Override
+    public boolean deleteFileSystem() throws IOException {
+        if (pathPart == null || pathPart.isEmpty()) {
+            throw new IOException("refusing to delete every object in bucket " + bucketName);
+        }
+        return getFile("").delete();
+    }
+
+    @Override
+    public boolean isLocalFileSystem() {
+        return false;
+    }
+
     public String getBucketName() {
         return bucketName;
     }
-    
-    /**
-     * Get the configured AWS region.
-     * 
-     * @return AWS region or null if using default
-     */
+
     public String getRegion() {
         return region;
+    }
+
+    @Override
+    public synchronized void close() {
+        if (client != null) {
+            client.close();
+            client = null;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "s3://" + bucketName + (pathPart == null || pathPart.isEmpty() ? "" : "/" + pathPart);
     }
 }

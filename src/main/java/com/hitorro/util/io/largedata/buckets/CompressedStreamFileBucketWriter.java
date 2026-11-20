@@ -25,7 +25,6 @@ import com.hitorro.util.basefile.fs.BaseFile;
 import com.hitorro.util.io.largedata.BaseFileAccessingObjectFactory;
 import com.hitorro.util.io.largedata.CompressedStreamIO;
 import com.hitorro.util.io.largedata.CompressedStreamIteratorSink;
-import org.apache.commons.collections.iterators.ArrayIterator;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -55,7 +54,7 @@ public class CompressedStreamFileBucketWriter<T extends CompressedStreamIO> exte
     }
 
     public T[] writeArrayAux(BaseFile temp, T[] arr, int max) throws IOException {
-        Iterator<T> iter = new ArrayIterator(arr, 0, max);
+        Iterator<T> iter = java.util.Arrays.asList(arr).subList(0, max).iterator();
         CompressedStreamIteratorSink<T> sink = new CompressedStreamIteratorSink<T>();
         sink.setIterator(iter);
         sink.setFile(temp);
