@@ -1,56 +1,34 @@
 /*
- * Copyright (c) 2006-2025 Chris Collins
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * Copyright (c) 2006-2026 Chris Collins
  */
 package com.hitorro.util.basefile.fs.s3;
 
 import com.hitorro.util.basefile.fs.configfactories.FileSystemConfig;
 
 /**
- * Configuration object for S3 filesystem.
- * 
- * Example usage:
- * <pre>
- * S3Config config = new S3Config();
- * config.bucket = "my-bucket";
- * config.accessKey = "AKIAIOSFODNN7EXAMPLE";
- * config.secretAccessKey = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY";
- * config.region = "us-east-1";  // optional
- * 
- * HTS3FileSystem fs = config.getFileSystem();
- * </pre>
+ * S3 bucket settings. With an {@link #endpoint} it is an S3-compatible store
+ * (MinIO, Ceph, R2…); without one, AWS S3.
  */
 public class S3Config extends FileSystemConfig<HTS3FileSystem> {
-    /** S3 bucket name (without s3a:// prefix) */
+    /** S3 bucket name */
     public String bucket;
-    
-    /** AWS secret access key */
+
+    /** Secret access key; null for the SDK's default credential chain */
     public String secretAccessKey;
-    
-    /** AWS access key ID */
+
+    /** Access key ID; null for the SDK's default credential chain */
     public String accessKey;
-    
-    /** AWS region (e.g., "us-east-1"), optional */
+
+    /** Region (e.g. "us-east-1"), optional */
     public String region;
 
+    /** S3-compatible endpoint (e.g. "http://minio:9000"), optional */
+    public String endpoint;
+
     public HTS3FileSystem getFileSystem() {
+        if (endpoint != null && !endpoint.isBlank()) {
+            return new S3CompatibleFileSystem(endpoint, bucket, accessKey, secretAccessKey, true, region);
+        }
         return new HTS3FileSystem(this);
     }
 }

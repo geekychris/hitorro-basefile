@@ -28,7 +28,6 @@ import com.hitorro.util.core.iterator.sinks.Sink;
 import com.hitorro.util.core.string.Fmt;
 import com.hitorro.util.io.StoreException;
 import com.hitorro.util.io.largedata.BaseFileAccessingObjectFactory;
-import org.apache.commons.collections.iterators.ArrayIterator;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -124,7 +123,7 @@ public class BaseFileBucketWriter<T> extends BaseBucketWriter<T> {
     }
 
     public T[] writeArrayAux(BaseFile temp, T[] arr, int max) throws IOException {
-        Iterator<T> iter = new ArrayIterator(arr, 0, max);
+        Iterator<T> iter = java.util.Arrays.asList(arr).subList(0, max).iterator();
         int count = sink(temp, iter);
         for (int i = 0; i < max; i++) {
             arr[i] = null;

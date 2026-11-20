@@ -70,7 +70,7 @@ classDiagram
     }
     class FileFile
     class DFSFile
-    class HTS3File
+    class S3File
     class FileTranProtFile
     class JarFileFile
     class ZipFileFile
@@ -84,7 +84,7 @@ classDiagram
 
     BaseFile <|-- FileFile
     BaseFile <|-- DFSFile
-    BaseFile <|-- HTS3File
+    BaseFile <|-- S3File
     BaseFile <|-- FileTranProtFile
     BaseFile <|-- JarFileFile
     BaseFile <|-- ZipFileFile
@@ -98,7 +98,7 @@ classDiagram
 
     FileFileSystem   ..> FileFile          : creates
     DFSFileSystem    ..> DFSFile           : creates
-    HTS3FileSystem   ..> HTS3File          : creates
+    HTS3FileSystem   ..> S3File            : creates
     FTPFileSystem    ..> FileTranProtFile  : creates
     JarFileSystem    ..> JarFileFile       : creates
 ```
@@ -109,11 +109,15 @@ Constructing one:
 // local disk
 BaseFile local = FileFileSystem.Root.getFile("/var/data/report.pdf");
 
-// S3
-BaseFile s3 = new HTS3FileSystem("us-east-1", "my-bucket").getFile("logs/2026-08.jsonl");
+// S3: the SDK's default credentials and region
+BaseFile s3 = BaseFileSystem.getBaseFileFromPath("s3://my-bucket/logs/2026-08.jsonl");
 
-// HDFS
-BaseFile hdfs = new DFSFileSystem(hadoopConf).getFile("/user/chris/big-input.avro");
+// any S3-compatible store (MinIO, Ceph, SeaweedFS, R2, GCS's S3 API…)
+BaseFile minio = new S3CompatibleFileSystem("http://minio:9000", "my-bucket", accessKey, secretKey)
+        .getFile("logs/2026-08.jsonl");
+
+// HDFS: needs Hadoop on the classpath (see Dependencies)
+BaseFile hdfs = BaseFileSystem.getBaseFileFromPath("hdfs://namenode:9000/user/chris/big-input.avro");
 
 // same code from here on — the API is uniform:
 if (bf.exists()) {
@@ -128,8 +132,9 @@ com.hitorro.util.basefile/
 ├── fs/                         BaseFile, BaseFileSystem, FileInfo, FileAdapter,
 │   │                           CompressionType, FileSystemCascadingContainer
 │   ├── file/                   local-disk impl (FileFile, FileFileSystem)
-│   ├── s3/                     S3 (HTS3FileSystem, S3CompatibleFileSystem)
-│   ├── dfs/                    Hadoop DFS (DFSFile, DFSFileSystem)
+│   ├── s3/                     S3 on the AWS SDK v2 (S3File, HTS3FileSystem,
+│   │                           S3CompatibleFileSystem, MinioProtocolAdapter)
+│   ├── dfs/                    HDFS (DFSFile, DFSFileSystem); needs Hadoop
 │   ├── ftp/                    FTP (FileTranProtFile, FTPFileSystem)
 │   ├── jarfile/                jar & zip (JarFileFile, JarFileSystem, ZipFileSystem)
 │   ├── sinks/                  BaseFileStatsSink, HashCountingBaseFileStateSink, …
@@ -235,24 +240,48 @@ Java 21 is required.
 | Internal | `com.hitorro:hitorro-core` | Log, Env, StringUtil, HTAssert, JsonInitable, SPI interfaces |
 | Internal | `com.hitorro:hitorro-streams` | AbstractIterator, BaseMapper, BaseSink, RestartableService, ThreadTimer |
 | Runtime | `com.fasterxml.jackson.core:jackson-databind` | JsonInitable config, `BaseFile.getJsonNode()` |
-| Runtime | `org.apache.hadoop:hadoop-client` | `DFSFileSystem` for HDFS |
-| Runtime | `org.apache.hadoop:hadoop-aws` | `HTS3FileSystem` / `S3CompatibleFileSystem` |
+| Runtime | `software.amazon.awssdk:s3` | S3 and S3-compatible stores (no Hadoop) |
+| Runtime | `org.apache.commons:commons-compress` | `.bz2` compression |
+| Optional | `org.apache.hadoop:hadoop-client` | `hdfs://` only: add it to your app to use HDFS |
 | Runtime | `commons-net:commons-net` | `FTPFileSystem` |
 | Runtime | `commons-codec:commons-codec` | file-content digests |
 | Runtime | `com.drewnoakes:metadata-extractor` | `ImageManipulator` EXIF-aware operations |
 | Runtime | `net.sf.trove4j:core` | `FPHashLongMap`, `TroveMapUtil` |
 | Test | `junit-jupiter`, `mockito-core`, `assertj-core` | via reactor |
 
-Consumers of BaseFile-backed code get all of this transitively.
+Consumers of BaseFile-backed code get all of this transitively, except
+Hadoop: it is optional, so an app carries it only if it adds it. Without it
+`hdfs://` isn't registered and everything else works
+(`BaseFileSystem.HADOOP_AVAILABLE`).
+
+### S3 notes
+
+- `s3://` and `s3a://` mean the same thing. By default they go to AWS with
+  the SDK's credential chain; set `hitorro.s3.endpoint` (system property) or
+  `HITORRO_S3_ENDPOINT` to send them to another S3-compatible store, or
+  register a `MinioProtocolAdapter`.
+- Directories are key prefixes; `mkdir()` writes a `dir/` marker; rename is a
+  copy and a delete; appends and timestamps aren't supported (as with S3A).
+  Writes stream through a bounded buffer and become multipart uploads above
+  16 MiB (`withPartSize`).
+- For S3-compatible endpoints, checksums are sent only when required: some
+  stores mis-store the SDK's default streaming checksums.
+- Tests run against SeaweedFS in a container (`S3FileIntegrationTest`), and
+  are skipped without Docker. On Rancher Desktop set
+  `DOCKER_HOST=unix://$HOME/.rd/docker.sock`.
 
 ## Adding a new filesystem
 
 1. Extend `BaseFileSystem` (create + get root + get named file)
 2. Extend `BaseFile` (exists/isDir/length/lastModified, in/out streams,
    getChild / getParent / listChildren, delete, absolutePath)
-3. Register a `BaseFilePropertyFactory` if the FS needs config-driven bootstrap
-4. Wire into `FileSystemCascadingContainer` if you want the FS to participate
-   in URL-scheme dispatch (`s3://…`, `hdfs://…`, `ftp://…`)
+3. Implement `ProtocolAdapter` (a `BaseFilePropertyFactory` if the FS needs
+   config-driven bootstrap) and list it in
+   `META-INF/services/com.hitorro.util.basefile.fs.ProtocolAdapter` in your
+   jar: `BaseFileSystem` loads it at startup and routes its scheme
+   (`abfs://…`, `gs://…`) to it. A backend for Azure Blob or GCS can live in
+   its own module this way, carrying only its own SDK. Or register one at
+   run time with `BaseFileSystem.addProtocolAdapter`.
 
 ## `EnvBaseFiles` — the config-directory shortcut
 

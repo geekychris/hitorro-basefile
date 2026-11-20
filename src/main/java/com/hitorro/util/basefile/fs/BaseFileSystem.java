@@ -29,6 +29,7 @@ import com.hitorro.util.basefile.fs.dfs.HDFSPropertyFactory;
 import com.hitorro.util.basefile.fs.file.FileFileSystem;
 import com.hitorro.util.basefile.fs.ftp.FTPPropertyFactory;
 import com.hitorro.util.basefile.fs.s3.S3PropertyFactory;
+import com.hitorro.util.core.Log;
 import com.hitorro.util.core.string.FmtCore;
 import com.hitorro.util.json.keys.BooleanProperty;
 import com.hitorro.util.json.keys.FileProperty;
@@ -37,6 +38,8 @@ import com.hitorro.util.json.keys.StringProperty;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 
 /**
  * User: chris
@@ -47,20 +50,57 @@ public abstract class BaseFileSystem<F extends BaseFile, S extends BaseFileSyste
 
     public static FileProperty FakeHDFS = new FileProperty("filesystem.fake.dir", "Fake location for filesystem using the local FS", "");
 
+    /**
+     * Whether Hadoop is on the classpath. HDFS ({@code hdfs://}) needs it;
+     * nothing else does. hitorro-basefile declares Hadoop optional: add
+     * {@code org.apache.hadoop:hadoop-client} to use HDFS.
+     */
+    public static final boolean HADOOP_AVAILABLE = classPresent("org.apache.hadoop.fs.FileSystem");
+
     private static HashMap<String, ProtocolAdapter> adapters = getInitialAdapters();
 
     protected String pathPart;
 
+    /**
+     * The built-in protocols (s3/s3a, ftp, file, and hdfs when Hadoop is
+     * present), then any {@link ProtocolAdapter} named in a
+     * {@code META-INF/services/com.hitorro.util.basefile.fs.ProtocolAdapter}
+     * file on the classpath, which is how another backend (Azure Blob, GCS,
+     * OpenDAL…) plugs in from its own jar. A service adapter replaces a built-in
+     * one for the same protocol.
+     */
     private static HashMap<String, ProtocolAdapter> getInitialAdapters() {
         HashMap<String, ProtocolAdapter> a = new HashMap<>();
         S3PropertyFactory s3Factory = new S3PropertyFactory();
         registerFS(a, s3Factory);
-        // Register legacy s3:// protocol for backward compatibility
-        a.put("s3", s3Factory);
-        registerFS(a, new HDFSPropertyFactory());
+        a.put(S3PropertyFactory.S3, s3Factory);
+        if (HADOOP_AVAILABLE) {
+            registerFS(a, new HDFSPropertyFactory());
+        }
         registerFS(a, new FTPPropertyFactory());
         registerFS(a, new FilePropertyFactory());
+        try {
+            for (ProtocolAdapter pa : ServiceLoader.load(ProtocolAdapter.class)) {
+                a.put(pa.getProtocol().toLowerCase(), pa);
+            }
+        } catch (ServiceConfigurationError e) {
+            Log.util.error("A ProtocolAdapter service failed to load: %s", e.getMessage());
+        }
         return a;
+    }
+
+    static boolean classPresent(String name) {
+        try {
+            Class.forName(name, false, BaseFileSystem.class.getClassLoader());
+            return true;
+        } catch (ClassNotFoundException | LinkageError e) {
+            return false;
+        }
+    }
+
+    /** The protocols that resolve, e.g. for a startup log or a health check. */
+    public static java.util.Set<String> getProtocols() {
+        return java.util.Collections.unmodifiableSet(adapters.keySet());
     }
 
     private static boolean registerFS(HashMap<String, ProtocolAdapter> a, BaseFilePropertyFactory factory) {
@@ -107,6 +147,10 @@ public abstract class BaseFileSystem<F extends BaseFile, S extends BaseFileSyste
     public static BaseFileSystem getGlobalNamespaceFileSystem(String hdfsRootPath) {
         if (FakeHDFS.apply() != null) {
             return new FileFileSystem(new File(FakeHDFS.apply(), hdfsRootPath));
+        }
+        if (!HADOOP_AVAILABLE) {
+            // As an HDFS file system that isn't enabled: no files.
+            return new UnavailableFileSystem("HDFS needs Hadoop on the classpath (org.apache.hadoop:hadoop-client)");
         }
         return new DFSFileSystem(FmtCore.S("/%s/%s", HDFSNameSpace.apply(), hdfsRootPath));
     }

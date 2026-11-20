@@ -215,4 +215,41 @@ class CompressionTypeTest {
             assertThat(CompressionType.size()).isEqualTo(4); // gz, bz2, zstd, none
         }
     }
+
+    @Nested
+    @DisplayName("Round trips")
+    class RoundTrips {
+
+        @Test
+        @DisplayName("Should compress and decompress with every codec")
+        void shouldRoundTripEveryCodec() throws Exception {
+            byte[] data = "line of text\n".repeat(500).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            for (CompressionType ct : CompressionType.values()) {
+                java.io.ByteArrayOutputStream sink = new java.io.ByteArrayOutputStream();
+                try (java.io.OutputStream out = ct.getOutputStreamCompressed(sink)) {
+                    out.write(data);
+                }
+                try (java.io.InputStream in = ct.getInputCompressed(new java.io.ByteArrayInputStream(sink.toByteArray()))) {
+                    assertThat(in.readAllBytes()).as(ct.name()).isEqualTo(data);
+                }
+            }
+        }
+
+        @Test
+        @DisplayName("Should write standard bz2 and read concatenated bz2 streams")
+        void shouldReadConcatenatedBz2() throws Exception {
+            java.io.ByteArrayOutputStream sink = new java.io.ByteArrayOutputStream();
+            for (String part : new String[]{"first;", "second"}) {
+                java.io.ByteArrayOutputStream one = new java.io.ByteArrayOutputStream();
+                try (java.io.OutputStream out = CompressionType.bz2.getOutputStreamCompressed(one)) {
+                    out.write(part.getBytes());
+                }
+                assertThat(one.toByteArray()).startsWith('B', 'Z', 'h');
+                sink.write(one.toByteArray());
+            }
+            try (java.io.InputStream in = CompressionType.bz2.getInputCompressed(new java.io.ByteArrayInputStream(sink.toByteArray()))) {
+                assertThat(new String(in.readAllBytes())).isEqualTo("first;second");
+            }
+        }
+    }
 }
