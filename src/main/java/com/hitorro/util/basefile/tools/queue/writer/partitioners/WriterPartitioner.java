@@ -21,7 +21,7 @@
  */
 package com.hitorro.util.basefile.tools.queue.writer.partitioners;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 public interface WriterPartitioner<T> {
 

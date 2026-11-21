@@ -21,16 +21,18 @@
  */
 package com.hitorro.util.basefile.fs;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import com.hitorro.util.json.JsonMappers;
+import tools.jackson.core.exc.JacksonIOException;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 import gnu.trove.iterator.TLongLongIterator;
 import gnu.trove.map.hash.TLongLongHashMap;
 import com.hitorro.util.basefile.tools.BaseLock;
 import com.hitorro.util.core.ArrayUtilCore;
 import com.hitorro.util.core.ConsoleCore;
 import com.hitorro.util.core.Log;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.BufferedReader;
 import com.hitorro.util.core.params.HTProperties;
@@ -176,7 +178,7 @@ public abstract class BaseFile<F extends BaseFile, FS extends BaseFileSystem> {
     public JsonNode getJsonNode(String type) throws Exception {
         try (java.io.Reader r = this.getReader()) {
             if (r == null) return null;
-            return new ObjectMapper().readTree(r);
+            return JsonMappers.json().readTree(r);
         }
     }
 
@@ -194,13 +196,16 @@ public abstract class BaseFile<F extends BaseFile, FS extends BaseFileSystem> {
 
     public void writeJson(JsonNode jn) throws IOException {
         try (OutputStream os = this.getOutputStream()) {
-            new ObjectMapper().writeValue(os, jn);
+            JsonMappers.json().writeValue(os, jn);
+        } catch (JacksonIOException e) {
+            // Jackson 3 wraps write failures in an unchecked exception; keep them IOExceptions
+            throw e.getCause();
         }
     }
 
     public JsonNode readJsonElement() throws Exception {
         try (java.io.Reader r = this.getReader()) {
-            return new ObjectMapper().readTree(r);
+            return JsonMappers.json().readTree(r);
         }
     }
 

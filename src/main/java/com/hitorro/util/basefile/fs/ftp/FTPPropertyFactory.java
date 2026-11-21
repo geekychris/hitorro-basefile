@@ -21,7 +21,7 @@
  */
 package com.hitorro.util.basefile.fs.ftp;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.hitorro.util.basefile.fs.configfactories.BaseFilePropertyFactory;
 import com.hitorro.util.basefile.fs.configfactories.FileSystemConfig;
 import com.hitorro.util.json.keys.StringProperty;

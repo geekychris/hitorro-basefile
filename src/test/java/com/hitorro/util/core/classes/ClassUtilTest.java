@@ -21,9 +21,9 @@
  */
 package com.hitorro.util.core.classes;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 import com.hitorro.util.json.JSONUtil;
 import com.hitorro.util.json.keys.PropertyKeyValidationException;
 import org.junit.jupiter.api.BeforeAll;
@@ -422,8 +422,8 @@ class ClassUtilTest {
         void stringValue() {
             JsonNode result = JSONUtil.ensureJsonNode("hello");
             assertThat(result).isNotNull();
-            assertThat(result.isTextual()).isTrue();
-            assertThat(result.textValue()).isEqualTo("hello");
+            assertThat(result.isString()).isTrue();
+            assertThat(result.stringValue()).isEqualTo("hello");
         }
 
         @Test
@@ -431,8 +431,8 @@ class ClassUtilTest {
         void emptyString() {
             JsonNode result = JSONUtil.ensureJsonNode("");
             assertThat(result).isNotNull();
-            assertThat(result.isTextual()).isTrue();
-            assertThat(result.textValue()).isEqualTo("");
+            assertThat(result.isString()).isTrue();
+            assertThat(result.stringValue()).isEqualTo("");
         }
 
         @Test
@@ -519,7 +519,7 @@ class ClassUtilTest {
         @Test
         @DisplayName("TextNode passthrough returns same instance")
         void textNodePassthrough() {
-            JsonNode original = JsonNodeFactory.instance.textNode("test");
+            JsonNode original = JsonNodeFactory.instance.stringNode("test");
             JsonNode result = JSONUtil.ensureJsonNode(original);
             assertThat(result).isSameAs(original);
         }

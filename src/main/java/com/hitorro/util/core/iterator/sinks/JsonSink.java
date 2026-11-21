@@ -21,11 +21,13 @@
  */
 package com.hitorro.util.core.iterator.sinks;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.smile.SmileFactory;
+import tools.jackson.core.StreamWriteFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import com.hitorro.util.json.JsonMappers;
+import tools.jackson.core.JacksonException;
+
 import com.hitorro.util.basefile.fs.BaseFile;
 import com.hitorro.util.core.Constants;
 import com.hitorro.util.core.HTRuntimeException;
@@ -36,7 +38,20 @@ import java.io.*;
 
 
 public class JsonSink extends BaseSink<JsonNode> {
-    protected ObjectMapper mapper = new ObjectMapper();
+    // Jackson 3 mappers are immutable, so the configurations the 3.x sink set on its own
+    // mapper are built once here. Neither closes the target or flushes it on every write.
+    private static final ObjectMapper JSON = JsonMappers.builder()
+            .disable(StreamWriteFeature.AUTO_CLOSE_TARGET)
+            .disable(StreamWriteFeature.FLUSH_PASSED_TO_STREAM)
+            .build();
+    private static final ObjectMapper JSON_INDENT = JsonMappers.builder()
+            .disable(StreamWriteFeature.AUTO_CLOSE_TARGET)
+            .disable(StreamWriteFeature.FLUSH_PASSED_TO_STREAM)
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .build();
+
+    protected ObjectMapper mapper = JSON;
+    protected boolean smile = false;
     protected OutputStream os;
     protected int count = 0;
     protected Writer ow;
@@ -68,10 +83,6 @@ public class JsonSink extends BaseSink<JsonNode> {
             Log.util.error("Unable to open outputStream");
             throw new HTRuntimeException("Unable to open output writer %s %e", e, e);
         }
-
-        mapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
-        // stop flushing after every write over the wire!
-        mapper.configure(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM, false);
     }
 
     /**
@@ -85,7 +96,10 @@ public class JsonSink extends BaseSink<JsonNode> {
         this(os, indent);
         this.flushOnAdd = flushOnAdd;
         if (smileFormat) {
-            mapper = new ObjectMapper(new SmileFactory());
+            // As in 3.x, the Smile mapper has Jackson's defaults (it closes the target) and
+            // ignores indent.
+            smile = true;
+            mapper = JsonMappers.smile();
         }
     }
 
@@ -110,11 +124,10 @@ public class JsonSink extends BaseSink<JsonNode> {
     }
 
     public void setIndent(boolean indent) {
-        if (indent) {
-            mapper.enable(SerializationFeature.INDENT_OUTPUT);
-        } else {
-            mapper.disable(SerializationFeature.INDENT_OUTPUT);
+        if (smile) {
+            return; // pretty printing has no meaning for Smile
         }
+        mapper = indent ? JSON_INDENT : JSON;
     }
 
     @Override
@@ -159,7 +172,7 @@ public class JsonSink extends BaseSink<JsonNode> {
                 ow.flush();
             }
             return true;
-        } catch (IOException e) {
+        } catch (JacksonException | IOException e) {
             Log.util.error("unable to put in sink, %s %e", e, e);
             return false;
         }

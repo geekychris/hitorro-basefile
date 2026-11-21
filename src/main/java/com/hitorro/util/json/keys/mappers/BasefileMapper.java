@@ -21,7 +21,7 @@
  */
 package com.hitorro.util.json.keys.mappers;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.hitorro.util.basefile.fs.BaseFile;
 import com.hitorro.util.core.params.GlobalProperties;
 import com.hitorro.util.basefile.fs.BaseFileSystem;
@@ -29,6 +29,7 @@ import java.util.function.Function;
 import com.hitorro.util.json.JsonInitable;
 
 import java.io.IOException;
+import com.hitorro.util.json.JsonValues;
 
 public class BasefileMapper implements Function<JsonNode, BaseFile>, JsonInitable {
     public static BasefileMapper me = new BasefileMapper();
@@ -39,7 +40,7 @@ public class BasefileMapper implements Function<JsonNode, BaseFile>, JsonInitabl
 
     public BaseFile apply(JsonNode jsonNodes) {
         try {
-            String val = GlobalProperties.resolveJsonVariable(jsonNodes.textValue());
+            String val = GlobalProperties.resolveJsonVariable(JsonValues.textValue(jsonNodes));
             if (val == null) {
                 return null;
             }

@@ -21,9 +21,10 @@
  */
 package com.hitorro.util.core.iterator.json;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.JsonNode;
+import com.hitorro.util.json.JsonMappers;
+
 import com.hitorro.util.basefile.fs.BaseFile;
 import com.hitorro.util.core.iterator.AbstractIterator;
 
@@ -32,9 +33,7 @@ import java.io.InputStream;
 import java.io.Reader;
 
 
-
 public class BaseJsonIterator extends AbstractIterator<JsonNode> {
-    private final static JsonFactory factory = new JsonFactory();
 
     protected HTJSONParser jnparser;
     protected JsonParser parser = null;
@@ -47,15 +46,15 @@ public class BaseJsonIterator extends AbstractIterator<JsonNode> {
     }
 
     public BaseJsonIterator(BaseFile baseFile) throws IOException {
-        init(factory.createParser(baseFile.getInputStreamRaw()));
+        init(JsonMappers.json().createParser(baseFile.getInputStreamRaw()));
     }
 
     public BaseJsonIterator(InputStream is) throws IOException {
-        init(factory.createParser(is));
+        init(JsonMappers.json().createParser(is));
     }
 
     public BaseJsonIterator(Reader reader) throws IOException {
-        init(factory.createParser(reader));
+        init(JsonMappers.json().createParser(reader));
     }
 
     private void init(final JsonParser parser) {
